@@ -34,8 +34,12 @@
 /// @brief Segment sub class. All Segments in the cradle are identical so no constructor is needed.
 struct Segment {
 	physx::PxRigidDynamic* pBall;
+
 	physx::PxRigidStatic* pHangerA;
+	physx::PxDistanceJoint* pJointA;
+
 	physx::PxRigidStatic* pHangerB;
+	physx::PxDistanceJoint* pJointB;
 };
 
 class Cradle
@@ -86,7 +90,7 @@ public:
 	void update();
 
 	void simulate();
-
+	
 
 	struct worldPositions {
 		std::vector<physx::PxVec3> balls;
@@ -98,9 +102,5 @@ public:
 	/// @return 
 	worldPositions getWorldPositions();
 };
-errno 
-
-
 
 extern Cradle cradle;
-

@@ -23,6 +23,12 @@ namespace P {
 	extern physx::PxScene* gpScene;
 	/// @brief Object that makes sure PhysX uses the same units of measurement.
 	extern physx::PxTolerancesScale gToleranceScale;
+#ifdef _DEBUG
+	/// @brief Physical debugger (for debug mode)
+	extern physx::PxPvd*	gpPVD;
+#endif // _DEBUG
+
+
 }
 
 
