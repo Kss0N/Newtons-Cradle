@@ -24,6 +24,10 @@ public:
 	physx::PxTriangleMeshGeometry createPxGeometry(double scale);
 
 	void draw(Shader& shader);
+
+	/// @brief transfer the buffers to openGL
+	void tansferBufferToGL(GLuint inVAO = 0);
+
 private:
 	//No textures for the moment; objects have colors instead
 	PxVec4 RGBA;

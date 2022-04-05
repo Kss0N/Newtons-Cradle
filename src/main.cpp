@@ -44,6 +44,10 @@ physx::PxPhysics*           P::gpPhysics;
 physx::PxCooking*           P::gpCooking;
 physx::PxScene*             P::gpScene;
 physx::PxTolerancesScale    P::gToleranceScale;
+#ifdef _DEBUG
+physx::PxPvd*               P::gpPVD;
+#endif // _DEBUG
+
 
 //PhysX constants
 
@@ -113,11 +117,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     
     P::gpFoundation = PxCreateFoundation(PX_PHYSICS_VERSION,
         gAllocatorCB, gErrorCB); //Would be a good idea to assert, but oh well
+#ifdef _DEBUG
+    P::gpPVD = physx::PxCreatePvd(*P::gpFoundation);
+#endif // _DEBUG      
     P::gpPhysics = PxCreatePhysics(PX_PHYSICS_VERSION,
-        *P::gpFoundation, P::gToleranceScale);
+        *P::gpFoundation, P::gToleranceScale, false, P::gpPVD);
     P::gpCooking = PxCreateCooking(PX_PHYSICS_VERSION, *P::gpFoundation,
         physx::PxCookingParams(P::gToleranceScale));
     PxInitExtensions(*P::gpPhysics, nullptr);
+
+
 
     physx::PxSceneDesc SceneDesc(P::gToleranceScale);
     SceneDesc.gravity = physx::PxVec3(0, -9.82, 0);
@@ -125,9 +134,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     SceneDesc.filterShader = filterShader;
     P::gpScene = P::gpPhysics->createScene(SceneDesc);
 
+
+
     cradle.init();
-
-
     ShowWindow(ghMainWindow, SW_SHOW);
     UpdateWindow(ghMainWindow);
     hMainAccel = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CRADLECRADLE));
@@ -153,11 +162,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 SUCCESSFUL_EXIT:
 
     //Deal with PhysX
+#ifdef _DEBUG
+    P::gpPVD->release();
+#endif // _DEBUG    
     PxCloseExtensions();
-    P::gpScene->release();
-    P::gpCooking->release();
-    P::gpPhysics->release();
-    P::gpFoundation->release();
+    P::gpScene      ->release();
+    P::gpCooking    ->release();
+    P::gpPhysics    ->release();
+    P::gpFoundation ->release();
 
     return (int) msg.wParam;
 }
@@ -237,8 +249,8 @@ static void initGL(HWND hWnd, Shader* pShader)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //Black
     pShader->init("def.vert", "def.frag");
 
-
     ReleaseDC(hWnd, hDevContxt);
+    
 }
 
 

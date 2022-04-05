@@ -6,16 +6,57 @@
 
 
 
+void Mesh::tansferBufferToGL(GLuint inVAO) {
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 
+	bool VAOSupplied = false;
+	if (!inVAO) {
+		glGenVertexArrays(1, &(VAO));
+	}
+	else { VAO = inVAO; VAOSupplied = true; }
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_VERTEX_ARRAY, VBO);
+	glBufferData(GL_VERTEX_ARRAY,
+		//0th vertex contains nothing
+		vertices.size() - 1, vertices.data() + 1, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		indices.size() - 1, indices.data(), GL_STATIC_DRAW);
+
+	if (!inVAO) {
+		glBindVertexArray(0);
+	}
+
+	//Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		(void*)0);
+	glEnableVertexAttribArray(0);
+
+	//Normal
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		(void*)(sizeof(PxVec3)));
+	glEnableVertexAttribArray(1);
+}
 
 
 /*obj file type*/
 Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 	using namespace std;
+	Vertex stdVertex = {
+		.pos = PxVec3(0,0,0),
+		.normal = PxVec3(0,0,0),
+	};
 
 	std::vector<Vertex> vertices;
+	vertices.push_back(stdVertex); //to make sure things actually work 
 	std::vector<PxVec3> normals;
+	normals.push_back(physx::PxVec3(0, 0, 0));
 	std::vector<PxVec2> textures;
+	textures.push_back(physx::PxVec2(0, 0));
 	std::vector<unsigned int> indices;
 
 	auto vertIndex = +1;
@@ -47,7 +88,7 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 					&(vert.pos.x),
 					&(vert.pos.y),
 					&(vert.pos.z));
-				vertices[vertIndex++] = vert;
+				vertices.push_back(vert);
 			}
 			case 'n':
 			{
@@ -56,7 +97,7 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 					&(normal.x),
 					&(normal.y),
 					&(normal.z));
-				normals[normIndex++] = normal;
+				normals.push_back(normal);
 			}
 			case 't':
 			{
@@ -64,11 +105,10 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 				sscanf_s(line.c_str(), "vt %f %f",
 					&(uvCoord.x),
 					&(uvCoord.y));
-				textures[textIndex++] = uvCoord;
+				textures.push_back(uvCoord);
 			}
 			default:
 				//Invalid, return null
-				bFailFlag = true;
 				break;
 			}
 		}
@@ -92,14 +132,14 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 			{
 
 			}
-			else if (sscanf_s(line.c_str(), "%d/%d %d/%d %d/%d",
+			else if (sscanf_s(line.c_str(), "f %d/%d %d/%d %d/%d",
 				geomElements + 0, textElements + 0,
 				geomElements + 1, textElements + 1,
 				geomElements + 2, textElements + 2) == 2)
 			{
 				memset(normElements, 0, sizeof(normElements));
 			}
-			else if (sscanf_s(line.c_str(), "%d//%d %d//%d %d//%d",
+			else if (sscanf_s(line.c_str(), "f %d//%d %d//%d %d//%d",
 				geomElements + 0, normElements + 0,
 				geomElements + 1, normElements + 1,
 				geomElements + 2, normElements + 2) == 2)
@@ -122,9 +162,10 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 				vertices[geomElements[2]].uvCoord = textures[textElements[2]];
 				*/
 			}
-			indices[elemIndex++] = geomElements[0];
-			indices[elemIndex++] = geomElements[1];
-			indices[elemIndex++] = geomElements[2];
+			indices.push_back(geomElements[0]);
+			indices.push_back(geomElements[1]);
+			indices.push_back(geomElements[2]);
+
 		}
 	}
 	this->vertices = vertices;
@@ -134,42 +175,7 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 		return;
 	}
 
-	/*Finally the OpenGL parts Enjoy hehe*/
-	GLuint bufferObjects[2];
-	glGenBuffers(2, bufferObjects);
-	VBO = bufferObjects[0];
-	EBO = bufferObjects[1];
-
-	bool VAOSupplied = false;
-	if (!inVAO) {
-		glGenVertexArrays(1, &(VAO));
-	}
-	else { VAO = inVAO; VAOSupplied = true; }
 	
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_VERTEX_ARRAY, VBO);
-	glBufferData(GL_VERTEX_ARRAY,
-		//0th vertex contains nothing
-		vertices.size() - 1, vertices.data() + 1, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		indices.size() - 1, indices.data(), GL_STATIC_DRAW);
-
-	if (!inVAO) {
-
-	}
-
-	//Position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-		(void*)0);
-	glEnableVertexAttribArray(0);
-
-	//Normal
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-		(void*)(sizeof(PxVec3)));
-	glEnableVertexAttribArray(1);
 }
 
 
@@ -188,7 +194,7 @@ physx::PxTriangleMeshGeometry Mesh::createPxGeometry(double scale) {
 	meshDesc.points.stride = sizeof(Vertex);
 	meshDesc.points.count = vertices.size();
 	//I'm guessing the data field is the begin pos of the vertices, because I chose to start
-	meshDesc.points.data = ((char*)vertices.data());
+	meshDesc.points.data = ((char*)vertices.data()+1);
 
 	/*
 		triangles is the same as the EBO, but it's divided into groups of three.
@@ -199,10 +205,13 @@ physx::PxTriangleMeshGeometry Mesh::createPxGeometry(double scale) {
 
 	PxDefaultMemoryOutputStream writeBuffer;
 	PxTriangleMeshCookingResult::Enum result;
-	bool status = P::gpCooking->cookTriangleMesh(meshDesc, writeBuffer, &result);
-	if (not status) {
-		//Error
+	bool cookingSuccess = P::gpCooking->cookTriangleMesh
+	(meshDesc, writeBuffer, &result);
+
+	if (not cookingSuccess) {
+
 	}
+
 	PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
 	auto mesh = P::gpPhysics->createTriangleMesh(readBuffer);
 	PxMeshGeometryFlags flags; //No Flags
