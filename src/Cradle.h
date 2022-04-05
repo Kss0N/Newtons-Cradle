@@ -55,9 +55,7 @@ class Cradle
 	Mesh hangerMesh;
 	physx::PxShape* pHangerShape;
 
-
 	float ballRadius = 1;
-	float ropeLength = 1;
 	float density = 1;
 
 	float staticFriction = 1;
@@ -90,6 +88,8 @@ public:
 	void update();
 
 	void simulate();
+
+	void dispose();
 	
 
 	struct worldPositions {

@@ -165,6 +165,7 @@ SUCCESSFUL_EXIT:
 #ifdef _DEBUG
     P::gpPVD->release();
 #endif // _DEBUG    
+    cradle.dispose();
     PxCloseExtensions();
     P::gpScene      ->release();
     P::gpCooking    ->release();

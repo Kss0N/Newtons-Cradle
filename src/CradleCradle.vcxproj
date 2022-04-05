@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AllocatorCallback.h" />
+    <ClInclude Include="cmdParser.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="CpuDispatcher.h" />
     <ClInclude Include="Cradle.h" />
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AllocatorCallback.cpp" />
+    <ClCompile Include="cmdParser.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="CpuDispatcher.cpp" />
     <ClCompile Include="Cradle.cpp" />

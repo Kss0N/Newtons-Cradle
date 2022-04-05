@@ -192,12 +192,12 @@ physx::PxTriangleMeshGeometry Mesh::createPxGeometry(double scale) {
 	using namespace physx;
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.stride = sizeof(Vertex);
-	meshDesc.points.count = vertices.size();
+	meshDesc.points.count = vertices.size()-1;
 	//I'm guessing the data field is the begin pos of the vertices, because I chose to start
 	meshDesc.points.data = ((char*)vertices.data()+1);
 
 	/*
-		triangles is the same as the EBO, but it's divided into groups of three.
+	*	triangles are the same as the EBO, but it's divided into groups of three.
 	*/
 	meshDesc.triangles.stride = 3 * sizeof(unsigned int);
 	meshDesc.triangles.count = indices.size() / 3;

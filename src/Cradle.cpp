@@ -29,8 +29,8 @@ static physx::PxDistanceJoint* initDistanceJoint(float distance, physx::PxRigidA
 {
     auto pDistJoint = physx::PxDistanceJointCreate(*P::gpPhysics,
         //Actor A
-        pActorA, physx::PxTransform(),
-        pActorB, physx::PxTransform());
+        pActorA, physx::PxTransform(PxVec3(0,0,0)),
+        pActorB, physx::PxTransform(PxVec3(0,0,0)));
     pDistJoint->setMaxDistance(distance);
     pDistJoint->setMinDistance(distance);
     pDistJoint->setDistanceJointFlag(physx::PxDistanceJointFlag::Enum::eMAX_DISTANCE_ENABLED, true);
@@ -62,7 +62,7 @@ void Cradle::addSegments(uint32_t nSegments)
         s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
         s.pBall->attachShape(*pBallShape);
         s.pBall->setMass(density * volumeOfSphere(ballRadius));
-
+        P::gpScene->addActor(*s.pBall);
 
 
         PxVec3 posA = s.pBall->getGlobalPose().p + 
@@ -73,6 +73,9 @@ void Cradle::addSegments(uint32_t nSegments)
         s.pHangerB = P::gpPhysics->createRigidStatic(physx::PxTransform(posB));
         s.pHangerA->attachShape(*pHangerShape);
         s.pHangerB->attachShape(*pHangerShape);
+        P::gpScene->addActor(*s.pHangerA);
+        P::gpScene->addActor(*s.pHangerB);
+
         physx::PxActorFlags flags;
         flags.set(physx::PxActorFlag::Enum::eDISABLE_GRAVITY);
         flags.set(physx::PxActorFlag::Enum::eDISABLE_SIMULATION);
@@ -116,7 +119,7 @@ void Cradle::init(uint32_t nBalls)
 
 
     physx::PxShapeFlags ballShapeFlags;
-    auto ballGeometry = ballMesh.createPxGeometry(1);
+    //auto ballGeometry = ballMesh.createPxGeometry(1);
     ballShapeFlags.set(physx::PxShapeFlag::Enum::eVISUALIZATION);
     pBallShape = P::gpPhysics->createShape(
         physx::PxSphereGeometry(1),
@@ -150,10 +153,22 @@ Cradle::worldPositions Cradle::getWorldPositions()
     return wrldPoses;
 }
 
-Cradle::~Cradle() {
+
+void Cradle::dispose() {
     pBallShape->release();
     pBallMaterial->release();
-
     pHangerShape->release();
+
+    for (auto& segment : segments) {
+        segment.pBall->release();
+        segment.pHangerA->release();
+        segment.pHangerB->release();
+        segment.pJointA->release();
+        segment.pJointB->release();
+    }
+}
+
+Cradle::~Cradle() 
+{
 
 }

@@ -81,6 +81,9 @@
     <ClInclude Include="Cradle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cmdParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -114,6 +117,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cradle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cmdParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
