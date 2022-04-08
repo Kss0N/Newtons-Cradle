@@ -22,7 +22,7 @@ void main(){
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 reflDir = reflect(-lightDir, normal);
 
-    float ambientFactor = 0.5;
+    float ambientFactor = 0.8;
     float diffuseFactor = max(dot(normal, lightDir), 0);
     float specularFactor = specStrength * pow(max(dot(viewDir, reflDir), 0.0), specularPower);
 

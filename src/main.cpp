@@ -13,6 +13,9 @@
 #include "Shader.h"
 #include "CommandLine.h"
 #include "Cradle.h"
+#include "logger.h"
+#include "timeCounter.h"
+#include "Camera.h"
 
 
 
@@ -44,9 +47,7 @@ physx::PxPhysics*           P::gpPhysics;
 physx::PxCooking*           P::gpCooking;
 physx::PxScene*             P::gpScene;
 physx::PxTolerancesScale    P::gToleranceScale;
-#ifdef _DEBUG
 physx::PxPvd*               P::gpPVD;
-#endif // _DEBUG
 
 
 //PhysX constants
@@ -117,9 +118,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     
     P::gpFoundation = PxCreateFoundation(PX_PHYSICS_VERSION,
         gAllocatorCB, gErrorCB); //Would be a good idea to assert, but oh well
-#ifdef _DEBUG
+
+#if defined(_DEBUG) && !defined(NOPVD)
     P::gpPVD = physx::PxCreatePvd(*P::gpFoundation);
-#endif // _DEBUG      
+    constexpr auto fileName = "PvDTransport";
+    physx::PxPvdTransport* transport = physx::PxDefaultPvdFileTransportCreate(fileName);
+    P::gpPVD->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
+#else
+    P::gpPVD = nullptr;
+#endif // _DEBUG   
     P::gpPhysics = PxCreatePhysics(PX_PHYSICS_VERSION,
         *P::gpFoundation, P::gToleranceScale, false, P::gpPVD);
     P::gpCooking = PxCreateCooking(PX_PHYSICS_VERSION, *P::gpFoundation,
@@ -130,12 +137,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     physx::PxSceneDesc SceneDesc(P::gToleranceScale);
     SceneDesc.gravity = physx::PxVec3(0, -9.82, 0);
-    SceneDesc.cpuDispatcher = &gCpuDispatcher;
+    SceneDesc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(12);
     SceneDesc.filterShader = filterShader;
     P::gpScene = P::gpPhysics->createScene(SceneDesc);
 
+#if defined(_DEBUG) && !defined(NOPVD)
+    P::gpScene->getScenePvdClient()->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+    P::gpScene->getScenePvdClient()->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+#endif // _DEBUG
+
+    
 
 
+    tc.init();
     cradle.init();
     ShowWindow(ghMainWindow, SW_SHOW);
     UpdateWindow(ghMainWindow);
@@ -160,16 +174,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         RedrawWindow(ghMainWindow, nullptr, nullptr, RDW_INVALIDATE);
     }
 SUCCESSFUL_EXIT:
-
+    logger::closeLog();
     //Deal with PhysX
-#ifdef _DEBUG
-    P::gpPVD->release();
-#endif // _DEBUG    
+
     cradle.dispose();
     PxCloseExtensions();
     P::gpScene      ->release();
     P::gpCooking    ->release();
     P::gpPhysics    ->release();
+#if defined(_DEBUG) && ! defined(NOPVD)
+    P::gpPVD->release();
+    transport->release();
+#endif // _DEBUG    
     P::gpFoundation ->release();
 
     return (int) msg.wParam;
@@ -191,7 +207,10 @@ inline void getClientDimensions(HWND hWnd, LPLONG pWidth, LPLONG pHeight)
 
 static void drawCradle(LPPAINTSTRUCT ps, Shader& defShader) 
 {
-       
+
+    for (auto& pos : cradle.getPositions()) {
+        cradle.ballMesh.draw(defShader, pos);
+    }
 }
 
 
@@ -247,20 +266,24 @@ static void initGL(HWND hWnd, Shader* pShader)
 
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //Black
+    glClearColor(0.80f, 0.80f, 0.80f, 1.0f); //Black
     pShader->init("def.vert", "def.frag");
 
+
+
+    glUseProgram(*pShader);
+    glUniform3f(glGetUniformLocation(*pShader, "lightColor"), 1.0f, 1.0f, 1.0f);
+    glUniform3f(glGetUniformLocation(*pShader, "lightPos"), 0, 0, 0);
+    glUniform3f(glGetUniformLocation(*pShader, "objectColor"), 0.1, 0.1, 0.1);
+
+
+
+    cradle.ballMesh.tansferBufferToGL(NULL);
+
     ReleaseDC(hWnd, hDevContxt);
-    
 }
 
 
-
-
-static void tellCmdLineToResize(UINT newWidth, UINT newHeight) 
-{
-
-}
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -280,6 +303,10 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
     switch (message)
     {
+    case WM_KEYDOWN:
+    {
+        camera.move(wParam);
+    }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);

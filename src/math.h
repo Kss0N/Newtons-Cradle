@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <cmath>
 #include <physX/foundation/PxMat33.h>
 #include <physX/foundation/PxMat44.h>
 #include <physX/foundation/PxMath.h>
