@@ -6,13 +6,8 @@
 
 
 
-void Mesh::tansferBufferToGL(GLuint inVAO) {
-	if (inVAO == 0) {	
-		glGenVertexArrays(1, &(VAO));
-	}
-	else VAO = inVAO;
-
-
+void Mesh::tansferBufferToGL(GLuint inVAO) {	
+	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 
@@ -27,22 +22,19 @@ void Mesh::tansferBufferToGL(GLuint inVAO) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
 		indices.size()*sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
-	//Configure the new one.
-	if (inVAO == 0) {
-		//Position
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-			(void*)0);
-		glEnableVertexAttribArray(0);
 
-		//Normal
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-			(void*)(sizeof(PxVec3)));
-		glEnableVertexAttribArray(1);
-	}
+	//Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		(void*)0);
+	glEnableVertexAttribArray(0);
+	//Normal
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		(void*)(sizeof(PxVec3)));
+	glEnableVertexAttribArray(1);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
 	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 	
@@ -190,11 +182,9 @@ void Mesh::draw(Shader& shader, PxVec3 worldPos)
 	glUseProgram(shader);
 	glBindVertexArray(VAO);
 
-	glUniform3f(glGetUniformLocation(shader, "orginPos"), worldPos.x, worldPos.y, worldPos.z);
-	glUniform3f(glGetUniformLocation(shader, "viewPos"), camera.position.x, camera.position.y, camera.position.z);
-
-	auto camMatrix = camera.cameraMatrix.front();
-	glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, FALSE, camMatrix);
+	//glUniform3f(glGetUniformLocation(shader, "orginPos"), worldPos.x, worldPos.y, worldPos.z);
+	//auto camMatrix = camera.cameraMatrix.front();
+	//glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, FALSE, camMatrix);
 
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

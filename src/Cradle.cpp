@@ -12,6 +12,7 @@ std::string HANGER_MESH_PATH    = "Hanger.obj";
 
 Cradle cradle;
 
+#define PI 3.1415926535897932
 
 
 constexpr float volumeOfSphere(float radius) {
@@ -37,7 +38,12 @@ void Cradle::addSegments(uint32_t nSegments)
         }
         s.pBall = P::gpPhysics->createRigidDynamic(
             physx::PxTransform(position));
-        s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+
+        //s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+        s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eENABLE_CCD, true);
+        s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eENABLE_CCD_FRICTION, true);
+        s.pBall->setRigidBodyFlag(physx::PxRigidBodyFlag::eENABLE_CCD, true);
+
         s.pBall->attachShape(*pBallShape);
         s.pBall->setMass(density * volumeOfSphere(ballRadius));
         P::gpScene->addActor(*s.pBall);
@@ -54,7 +60,7 @@ void Cradle::addSegments(uint32_t nSegments)
     UpdateWindow(ghMainWindow);
 }
 
-#define PI 3.1415926535897932
+
 
 Cradle::Cradle(uint32_t nBalls)
     : Cradle()
@@ -68,15 +74,15 @@ Cradle::Cradle()
 {
 }
 
+
 void Cradle::init(uint32_t nBalls)
 {
     pBallMaterial = P::gpPhysics->createMaterial(staticFriction, dynamicFriction, restitution);
-    cradle.reset();
 
 
-    physx::PxShapeFlags ballShapeFlags;
+
+    physx::PxShapeFlags ballShapeFlags = physx::PxShapeFlag::eSIMULATION_SHAPE | physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE;
     //auto ballGeometry = ballMesh.createPxGeometry(1);
-    ballShapeFlags.set(physx::PxShapeFlag::Enum::eVISUALIZATION);
     pBallShape = P::gpPhysics->createShape(
         physx::PxSphereGeometry(1),
         *pBallMaterial, false, ballShapeFlags);
@@ -86,6 +92,7 @@ void Cradle::init(uint32_t nBalls)
     addSegments(nBalls);
 }
 
+static volatile bool pleaseTerminate = false;
 #define X86_PAGE_SIZE 4096 
 struct simulateInput_t
 {
@@ -93,18 +100,32 @@ struct simulateInput_t
 };
 DWORD WINAPI Cradle::simulationProcedure(LPVOID input)
 {
+    std::ofstream log("Debug.txt", std::ios::app);
+    SYSTEMTIME st;
+    GetSystemTime(&st);
+    log << '[' << st.wHour << '|' << st.wMinute << ']' << "\r\n";
+
+
     auto segments = ((simulateInput_t*)input)->segments;
     unsigned __int64 milliseconds = 0;
-    while (!cradle.isResting())
+    while (!cradle.isResting() && !pleaseTerminate)
     {
-        //Apply drag
+        if (milliseconds % 100 == 0) {
+            log << "time = " << milliseconds << ":\r\n";
+        }
+        //Apply drag and log
         for (Segment& s : segments)
         {
             auto velocity = s.pBall->getLinearVelocity();
             //Drag force direction is opposite of the velocity's
             PxVec3 force = -1 * getDragMagnitude(s) * velocity.getNormalized();
             s.pBall->addForce(force);
+            
+            if (milliseconds % 100 == 0) {
+                log << s.pBall->getGlobalPose().p.y << "\r\n";
+            }
         }
+        if (milliseconds % 100 == 0) log << "\r\n\r\n\r\n";
         tc.updateTime(milliseconds++);
 
         P::gpScene->simulate(.001f);
@@ -117,28 +138,28 @@ DWORD WINAPI Cradle::simulationProcedure(LPVOID input)
     }
     logger::addLogEntry(static_cast<double>(milliseconds));
 
-
+    log.close();
+    delete(input);
     return 0;
 }
 
 void Cradle::simulate()
 {
     if (logger::logIsOpen()) logger::newLog();
+    pleaseTerminate = false;
     /*Move 0th Ball to vertical alignment*/
     auto oldPos = segments.cbegin()->pBall->getGlobalPose().p;
     segments.cbegin()->pBall->setGlobalPose(physx::PxTransform(
         PxVec3( oldPos.x - jointHeight, 
                 oldPos.y + jointHeight, 
                 0)));
-    
-    //Wake em up
-    for (auto& s : segments) s.pBall->wakeUp();
+    wakeUp();
 
-    simulateInput_t si = {
-    };
+    auto pSI = new simulateInput_t;
+    pSI->segments = segments;
     DWORD threadID;
     hSimulationThread = CreateThread(NULL, 8 * 8 * X86_PAGE_SIZE, 
-        simulationProcedure, static_cast<LPVOID>(&si), 0, &threadID);
+        simulationProcedure, static_cast<LPVOID>(pSI), 0, &threadID);
 
     
 
@@ -195,13 +216,11 @@ void Cradle::reset() {
 
 
 void Cradle::dispose() {
-    pBallShape->release();
-    pBallMaterial->release();
-
-    logger::closeLog();
-
     for (auto& segment : segments)
         disposeOfSegment(segment);
+    pBallShape->release();
+    pBallMaterial->release();
+    logger::closeLog();
 }
 
 void Cradle::adjustHeightOfJoints()
@@ -209,6 +228,27 @@ void Cradle::adjustHeightOfJoints()
     for (auto& s : segments)
     {
         s.adjustJointHeight(jointHeight, angleBetweenBallAndJoint);
+    }
+}
+
+void Cradle::stop()
+{
+    pleaseTerminate = true;
+}
+
+
+
+void Cradle::updateMaterial()
+{
+    size_t nSegments = segments.size();
+    dispose();
+    init(nSegments);
+}
+
+void Cradle::wakeUp()
+{
+    for (auto& s : segments) {
+        s.pBall->wakeUp();
     }
 }
 
@@ -228,7 +268,8 @@ bool Cradle::isResting()
     {
         auto velocity = s.pBall->getLinearVelocity();
         auto pos = s.pBall->getGlobalPose().p;
-        if (velocity.magnitudeSquared() != 0 or (pos.y != 0)) 
+        //to not go on forever, minimal speed is rounded down to .1mm/s
+        if (velocity.magnitude() >= pow(10, -4) or (abs(pos.y) >= pow(10, -1))) 
             return false;
     }
     return true;

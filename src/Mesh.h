@@ -40,8 +40,8 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-	GLuint VAO;
-	GLuint VBO;
-	GLuint EBO;
+	GLuint VAO = 0;
+	GLuint VBO = 0;
+	GLuint EBO = 0;
 };
 

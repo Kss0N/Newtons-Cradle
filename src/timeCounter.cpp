@@ -11,10 +11,8 @@ static constexpr auto WINDOW_NAME = TEXT("Counter");
 
 void timeCounter::updateTime(long ms) 
 {
-    *(long*)GetWindowLongPtr(hWnd, GWLP_USERDATA) = ms;
-    RECT r;
-    GetClientRect(hWnd, &r);
-    InvalidateRect(hWnd, &r, TRUE);
+    milliseconds = ms;
+    InvalidateRect(hWnd, NULL, TRUE);
 }
 
 static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

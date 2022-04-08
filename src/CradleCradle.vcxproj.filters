@@ -37,6 +37,9 @@
     <Filter Include="Source Files\windows">
       <UniqueIdentifier>{b3a33560-f1c8-443e-856e-ae837df8b4ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\openGL\Shaders\simple">
+      <UniqueIdentifier>{aed8a74a-74ca-439b-973a-d7655a37713b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">

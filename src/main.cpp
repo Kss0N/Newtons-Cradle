@@ -150,6 +150,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
     tc.init();
+    cradle.reset();
     cradle.init();
     ShowWindow(ghMainWindow, SW_SHOW);
     UpdateWindow(ghMainWindow);
@@ -269,15 +270,6 @@ static void initGL(HWND hWnd, Shader* pShader)
     glClearColor(0.80f, 0.80f, 0.80f, 1.0f); //Black
     pShader->init("def.vert", "def.frag");
 
-
-
-    glUseProgram(*pShader);
-    glUniform3f(glGetUniformLocation(*pShader, "lightColor"), 1.0f, 1.0f, 1.0f);
-    glUniform3f(glGetUniformLocation(*pShader, "lightPos"), 0, 0, 0);
-    glUniform3f(glGetUniformLocation(*pShader, "objectColor"), 0.1, 0.1, 0.1);
-
-
-
     cradle.ballMesh.tansferBufferToGL(NULL);
 
     ReleaseDC(hWnd, hDevContxt);
@@ -329,7 +321,7 @@ LRESULT CALLBACK mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             PAINTSTRUCT ps;
             HDC hDC = BeginPaint(hWnd, &ps);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            drawCradle(&ps, defaultShader);
+            //drawCradle(&ps, defaultShader);
             SwapBuffers(hDC);
             EndPaint(hWnd, &ps);
         }

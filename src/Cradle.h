@@ -136,6 +136,12 @@ public:
 
 	void adjustHeightOfJoints();
 
+	void stop();
+
+	void updateMaterial();
+
+	void wakeUp();
+
 	/// @brief Returns worldposition of all balls. because they all use the same 
 	/// Mesh, the position to offset is only needed.
 	std::vector<PxVec3> getPositions();

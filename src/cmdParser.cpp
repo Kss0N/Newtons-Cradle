@@ -12,6 +12,7 @@
 * 
 * start			starts timer
 * reset			resets values to "compare value" (which means the values of an iron sphere and with g = 9.82. 
+* stop			terminates currently running 
 * 
 * gravity		g-constant
 * density		mass/volume
@@ -85,7 +86,7 @@ void parseCommandLine(const char* command)
 			cradle.simulate();
 			break;
 		}
-		else if (isWord(cmdIterator, "RESET") >= 2)
+		else if (isWord(cmdIterator, "RESET"))
 		{
 			cradle.reset();
 			P::gpScene->setGravity(PxVec3(0, -9.82, 0));
@@ -98,13 +99,17 @@ void parseCommandLine(const char* command)
 				cradle.addSegments(CradleDefVals::nBalls - cradle.getSize());
 			}
 		}
-
+		else if (isWord(cmdIterator, "STOP")) {
+			cradle.stop();
+			break;
+		}
 
 
 		else if (isWord(cmdIterator, "GRAVITY"))
 		{
 			auto gravity = getVal(&cmdIterator);
 			P::gpScene->setGravity(PxVec3(0, -1 * gravity, 0));
+			cradle.wakeUp();
 			logger::newLog();
 		}
 		else if (isWord(cmdIterator, "DENSITY"))
