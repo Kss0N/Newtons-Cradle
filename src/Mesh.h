@@ -19,11 +19,15 @@ public:
 	/// @param filePath to a Wavefront .Obj mesh file
 	/// @param VAO a Vertex Attribute object, if none is supplied, the construtor
 	/// creates one
-	Mesh(std::string& filePath, GLuint VAO = 0);
+	Mesh(std::string& filePath);
 
 	physx::PxTriangleMeshGeometry createPxGeometry(double scale);
 
-	void draw(Shader& shader);
+
+	/// @brief draws mesh onto screen
+	/// @param shader
+	/// @param worldPos  
+	void draw(Shader& shader, PxVec3 worldPos);
 
 	/// @brief transfer the buffers to openGL
 	void tansferBufferToGL(GLuint inVAO = 0);
@@ -36,8 +40,8 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-	GLuint VAO;
-	GLuint VBO;
-	GLuint EBO;
+	GLuint VAO = 0;
+	GLuint VBO = 0;
+	GLuint EBO = 0;
 };
 

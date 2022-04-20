@@ -51,10 +51,9 @@ static GLuint createProgram(LPCSTR vertPath, LPCSTR fragPath, LPCSTR geomPath) {
 	glAttachShader(id, vertShader);
 	auto fragShader = getShader(fragPath, GL_FRAGMENT_SHADER);
 	glAttachShader(id, fragShader);
-	GLuint geomShader;
 	if (geomPath)
 	{
-		geomShader = getShader(geomPath, GL_GEOMETRY_SHADER);
+		GLuint geomShader = getShader(geomPath, GL_GEOMETRY_SHADER);
 		glAttachShader(id, geomShader);
 	}
 	glLinkProgram(id);

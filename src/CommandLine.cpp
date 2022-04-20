@@ -1,5 +1,5 @@
 #include "CommandLine.h"
-
+#include "cmdParser.h"
 
 CommandLine cmd;
 
@@ -68,12 +68,16 @@ LRESULT WINAPI wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             cmd.commandLine.push_back((char)wParam);
 
         }
-        else if (wParam == VK_BACK)
+        else if (wParam == VK_BACK) //Backspace
         {
             if(cmd.commandLine.size() > 0)
                 cmd.commandLine.pop_back();
         }
-
+        else if (wParam == VK_RETURN) //Enter
+        {
+            parseCommandLine(cmd.commandLine.c_str());
+            cmd.commandLine.clear();
+        }
 
         RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE);
         break;

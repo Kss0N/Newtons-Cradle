@@ -1,50 +1,47 @@
 #include "Mesh.h"
 #include "CradleCradle.h"
-
+#include "Camera.h"
 #include <istream>
 #include <fstream>
 
 
 
-void Mesh::tansferBufferToGL(GLuint inVAO) {
+void Mesh::tansferBufferToGL(GLuint inVAO) {	
+	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
-
-	bool VAOSupplied = false;
-	if (!inVAO) {
-		glGenVertexArrays(1, &(VAO));
-	}
-	else { VAO = inVAO; VAOSupplied = true; }
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_VERTEX_ARRAY, VBO);
 	glBufferData(GL_VERTEX_ARRAY,
 		//0th vertex contains nothing
-		vertices.size() - 1, vertices.data() + 1, GL_STATIC_DRAW);
+		vertices.size()*sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		indices.size() - 1, indices.data(), GL_STATIC_DRAW);
+		indices.size()*sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
-	if (!inVAO) {
-		glBindVertexArray(0);
-	}
 
 	//Position
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
 		(void*)0);
 	glEnableVertexAttribArray(0);
-
 	//Normal
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
 		(void*)(sizeof(PxVec3)));
 	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+
+	
 
 
 /*obj file type*/
-Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
+Mesh::Mesh(std::string& meshPath) {
 	using namespace std;
 	Vertex stdVertex = {
 		.pos = PxVec3(0,0,0),
@@ -179,8 +176,17 @@ Mesh::Mesh(std::string& meshPath, GLuint inVAO) {
 }
 
 
-void Mesh::draw(Shader& shader) {
 
+void Mesh::draw(Shader& shader, PxVec3 worldPos) 
+{
+	glUseProgram(shader);
+	glBindVertexArray(VAO);
+
+	//glUniform3f(glGetUniformLocation(shader, "orginPos"), worldPos.x, worldPos.y, worldPos.z);
+	//auto camMatrix = camera.cameraMatrix.front();
+	//glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, FALSE, camMatrix);
+
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
 
@@ -192,12 +198,12 @@ physx::PxTriangleMeshGeometry Mesh::createPxGeometry(double scale) {
 	using namespace physx;
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.stride = sizeof(Vertex);
-	meshDesc.points.count = vertices.size();
+	meshDesc.points.count = vertices.size()-1;
 	//I'm guessing the data field is the begin pos of the vertices, because I chose to start
 	meshDesc.points.data = ((char*)vertices.data()+1);
 
 	/*
-		triangles is the same as the EBO, but it's divided into groups of three.
+	*	triangles are the same as the EBO, but it's divided into groups of three.
 	*/
 	meshDesc.triangles.stride = 3 * sizeof(unsigned int);
 	meshDesc.triangles.count = indices.size() / 3;
